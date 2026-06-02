@@ -1,0 +1,12 @@
+# Requisitos do Projeto - Sistema de Chat Distribuído
+# Nenhuma dependência externa necessária
+# Python 3.8+ com módulos built-in:
+# - socket
+# - threading
+# - json
+# - datetime
+# - sys
+
+# Para desenvolvimento/testes (opcional):
+# pytest==7.0.0
+# pylint==2.13.0

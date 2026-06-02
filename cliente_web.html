@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Distribuído - Cliente Web</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-height: 600px;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .status {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .status.conectado::before {
+            content: '● ';
+            color: #4ade80;
+        }
+
+        .status.desconectado::before {
+            content: '● ';
+            color: #ef4444;
+        }
+
+        .conexao-panel {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: none;
+        }
+
+        .conexao-panel.ativo {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .botao-grupo {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-conectar {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-conectar:hover {
+            background: #5568d3;
+        }
+
+        .btn-desconectar {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-desconectar:hover {
+            background: #dc2626;
+        }
+
+        .mensagens {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: white;
+        }
+
+        .mensagem {
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .mensagem.propia {
+            text-align: right;
+        }
+
+        .mensagem.propia .conteudo {
+            background: #667eea;
+            color: white;
+            border-radius: 15px 15px 0 15px;
+        }
+
+        .mensagem.outra .conteudo {
+            background: #e0e0e0;
+            color: #333;
+            border-radius: 15px 15px 15px 0;
+        }
+
+        .mensagem.sistema .conteudo {
+            background: #f0f0f0;
+            color: #666;
+            text-align: center;
+            font-size: 12px;
+            font-style: italic;
+            border-radius: 10px;
+            padding: 5px 10px;
+        }
+
+        .remetente {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+
+        .conteudo {
+            display: inline-block;
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 10px;
+            word-wrap: break-word;
+        }
+
+        .timestamp {
+            font-size: 10px;
+            color: #ccc;
+            margin-top: 3px;
+        }
+
+        .entrada {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .entrada input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .entrada input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .entrada button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+        }
+
+        .entrada button:hover {
+            background: #5568d3;
+        }
+
+        .entrada button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .utilizadores {
+            padding: 10px 15px;
+            background: #f0f0f0;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .utilizadores strong {
+            color: #333;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💬 Chat Distribuído</h1>
+            <div class="status desconectado" id="status">Desconectado</div>
+        </div>
+
+        <div class="conexao-panel ativo" id="conexaoPanel">
+            <div class="form-group">
+                <label>Endereço do Servidor:</label>
+                <input type="text" id="inputServidor" placeholder="localhost" value="localhost">
+            </div>
+            <div class="form-group">
+                <label>Porta:</label>
+                <input type="number" id="inputPorta" placeholder="5000" value="5000">
+            </div>
+            <div class="form-group">
+                <label>Seu Nome:</label>
+                <input type="text" id="inputNome" placeholder="Digite seu nome" maxlength="20">
+            </div>
+            <div class="botao-grupo">
+                <button class="btn-conectar" onclick="conectar()">Conectar</button>
+            </div>
+        </div>
+
+        <div class="mensagens" id="mensagens"></div>
+
+        <div class="utilizadores" id="utilizadores" style="display: none;">
+            <strong>Online:</strong> <span id="listaUtilizadores"></span>
+        </div>
+
+        <div class="entrada">
+            <input type="text" id="inputMensagem" placeholder="Digite uma mensagem..." onkeypress="enviarMensagemTecla(event)" disabled>
+            <button onclick="enviarMensagem()" id="botaoEnviar" disabled>Enviar</button>
+            <button class="btn-desconectar" onclick="desconectar()" id="botaoDesconectar" style="display: none; flex: 0 0 auto; width: auto; padding: 10px 15px;">Sair</button>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let conectado = false;
+        let nomeUtilizador = '';
+
+        async function conectar() {
+            const servidor = document.getElementById('inputServidor').value.trim();
+            const porta = document.getElementById('inputPorta').value.trim();
+            nomeUtilizador = document.getElementById('inputNome').value.trim();
+
+            if (!servidor || !porta || !nomeUtilizador) {
+                alert('Por favor, preencha todos os campos!');
+                return;
+            }
+
+            try {
+                // Simulação de conexão WebSocket
+                // Em produção, seria necessário um servidor WebSocket
+                conectado = true;
+                atualizarUI();
+                adicionarMensagemSistema(`Conectado como ${nomeUtilizador}`);
+                document.getElementById('inputMensagem').focus();
+            } catch (erro) {
+                alert(`Erro ao conectar: ${erro.message}`);
+            }
+        }
+
+        function enviarMensagemTecla(event) {
+            if (event.key === 'Enter') {
+                enviarMensagem();
+            }
+        }
+
+        function enviarMensagem() {
+            const inputMensagem = document.getElementById('inputMensagem');
+            const conteudo = inputMensagem.value.trim();
+
+            if (!conteudo) return;
+
+            adicionarMensagemPropria(conteudo);
+            inputMensagem.value = '';
+            inputMensagem.focus();
+        }
+
+        function adicionarMensagemPropria(conteudo) {
+            const elementoMensagens = document.getElementById('mensagens');
+            const div = document.createElement('div');
+            div.className = 'mensagem propia';
+            div.innerHTML = `
+                <div class="remetente">Você</div>
+                <div class="conteudo">${escaparHTML(conteudo)}</div>
+                <div class="timestamp">${obterHora()}</div>
+            `;
+            elementoMensagens.appendChild(div);
+            elementoMensagens.scrollTop = elementoMensagens.scrollHeight;
+        }
+
+        function adicionarMensagemOutra(remetente, conteudo) {
+            const elementoMensagens = document.getElementById('mensagens');
+            const div = document.createElement('div');
+            div.className = 'mensagem outra';
+            div.innerHTML = `
+                <div class="remetente">${escaparHTML(remetente)}</div>
+                <div class="conteudo">${escaparHTML(conteudo)}</div>
+                <div class="timestamp">${obterHora()}</div>
+            `;
+            elementoMensagens.appendChild(div);
+            elementoMensagens.scrollTop = elementoMensagens.scrollHeight;
+        }
+
+        function adicionarMensagemSistema(conteudo) {
+            const elementoMensagens = document.getElementById('mensagens');
+            const div = document.createElement('div');
+            div.className = 'mensagem sistema';
+            div.innerHTML = `<div class="conteudo">${escaparHTML(conteudo)}</div>`;
+            elementoMensagens.appendChild(div);
+            elementoMensagens.scrollTop = elementoMensagens.scrollHeight;
+        }
+
+        function desconectar() {
+            conectado = false;
+            atualizarUI();
+            document.getElementById('mensagens').innerHTML = '';
+            adicionarMensagemSistema('Desconectado do servidor');
+        }
+
+        function atualizarUI() {
+            const conexaoPanel = document.getElementById('conexaoPanel');
+            const inputMensagem = document.getElementById('inputMensagem');
+            const botaoEnviar = document.getElementById('botaoEnviar');
+            const botaoDesconectar = document.getElementById('botaoDesconectar');
+            const status = document.getElementById('status');
+
+            if (conectado) {
+                conexaoPanel.classList.remove('ativo');
+                inputMensagem.disabled = false;
+                botaoEnviar.disabled = false;
+                botaoDesconectar.style.display = 'block';
+                status.textContent = `Conectado como ${nomeUtilizador}`;
+                status.classList.remove('desconectado');
+                status.classList.add('conectado');
+            } else {
+                conexaoPanel.classList.add('ativo');
+                inputMensagem.disabled = true;
+                botaoEnviar.disabled = true;
+                botaoDesconectar.style.display = 'none';
+                status.textContent = 'Desconectado';
+                status.classList.add('desconectado');
+                status.classList.remove('conectado');
+            }
+        }
+
+        function obterHora() {
+            const agora = new Date();
+            return agora.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function escaparHTML(texto) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return texto.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Demo: Simular mensagens recebidas
+        function simularMensagens() {
+            if (conectado) {
+                const nomes = ['João', 'Maria', 'Pedro', 'Ana'];
+                const mensagens = [
+                    'Olá a todos!',
+                    'Como está todo?',
+                    'Tudo bem por aqui',
+                    'Chat funcionando perfeitamente!',
+                    'Sistema distribuído a trabalhar 🎉'
+                ];
+                
+                const nomeAleatorio = nomes[Math.floor(Math.random() * nomes.length)];
+                const mensagemAleatoria = mensagens[Math.floor(Math.random() * mensagens.length)];
+                
+                if (Math.random() > 0.7) {
+                    adicionarMensagemOutra(nomeAleatorio, mensagemAleatoria);
+                }
+            }
+        }
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', atualizarUI);
+        setInterval(simularMensagens, 5000);
+    </script>
+</body>
+</html>
